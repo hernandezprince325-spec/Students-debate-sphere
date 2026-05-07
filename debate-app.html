@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DebateSphere - Student Edition</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin:0; background: #f0f4f8; color:#333; }
+    header { background: #1e3a8a; color:white; padding:15px; text-align:center; }
+    nav { display:flex; background:#1e40af; }
+    nav button { flex:1; padding:15px; background:none; border:none; color:white; font-size:16px; }
+    nav button.active { background:#3b82f6; }
+    .tab { display:none; padding:20px; }
+    .active { display:block; }
+    .card { background:white; border-radius:12px; padding:15px; margin:15px 0; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+    button { background:#2563eb; color:white; border:none; padding:12px 20px; border-radius:8px; font-size:16px; cursor:pointer; }
+    button:hover { background:#1d4ed8; }
+    .timer { font-size:48px; font-weight:bold; text-align:center; padding:30px; background:#1e3a8a; color:white; border-radius:16px; margin:20px 0; }
+    input, textarea { width:100%; padding:12px; margin:10px 0; border:1px solid #ccc; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎤 DebateSphere</h1>
+    <p>For Students • Online/Offline</p>
+  </header>
+
+  <nav>
+    <button onclick="showTab(0)" class="active">Home</button>
+    <button onclick="showTab(1)">Debates</button>
+    <button onclick="showTab(2)">Timer</button>
+    <button onclick="showTab(3)">Poetry</button>
+  </nav>
+
+  <!-- Home -->
+  <div class="tab active" id="tab0">
+    <div class="card">
+      <h2>Welcome, Student!</h2>
+      <p>Practice debates, time your speeches, and share poetry.</p>
+      <button onclick="showTab(1)" style="width:100%;margin:10px 0">Start a Debate</button>
+      <button onclick="showTab(2)" style="width:100%;margin:10px 0">Open Speech Timer</button>
+      <button onclick="showTab(3)" style="width:100%;margin:10px 0">Poetry Corner</button>
+    </div>
+  </div>
+
+  <!-- Debates -->
+  <div class="tab" id="tab1">
+    <h2>Current Debates</h2>
+    <div id="debateList"></div>
+    <button onclick="newDebate()" style="width:100%">+ New Debate Topic</button>
+  </div>
+
+  <!-- Timer -->
+  <div class="tab" id="tab2">
+    <h2>Speech Timer</h2>
+    <div class="timer" id="timerDisplay">03:00</div>
+    <div style="text-align:center">
+      <button onclick="startTimer(180)">3 min</button>
+      <button onclick="startTimer(300)">5 min</button>
+      <button onclick="startTimer(420)">7 min</button>
+      <button onclick="resetTimer()">Reset</button>
+    </div>
+    <p style="text-align:center; margin-top:20px"><strong>Pro Tip:</strong> Use in debate rounds!</p>
+  </div>
+
+  <!-- Poetry -->
+  <div class="tab" id="tab3">
+    <h2>Poetry Corner</h2>
+    <textarea id="poemInput" rows="6" placeholder="Write your poem here..."></textarea>
+    <button onclick="savePoem()">Save Poem</button>
+    <h3>Saved Poems</h3>
+    <div id="poemList"></div>
+  </div>
+
+  <script>
+    let currentTab = 0;
+    function showTab(n) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab'+n).classList.add('active');
+      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('nav button')[n].classList.add('active');
+      if(n===1) loadDebates();
+      if(n===3) loadPoems();
+    }
+
+    // Speech Timer
+    let timerInterval;
+    function startTimer(seconds) {
+      clearInterval(timerInterval);
+      let timeLeft = seconds;
+      const display = document.getElementById('timerDisplay');
+      
+      timerInterval = setInterval(() => {
+        let min = Math.floor(timeLeft / 60);
+        let sec = timeLeft % 60;
+        display.textContent = `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
+        if(timeLeft <= 0) {
+          clearInterval(timerInterval);
+          display.style.background = '#b91c1c';
+          alert("⏰ Time's Up! Great speech!");
+        }
+        timeLeft--;
+      }, 1000);
+    }
+    function resetTimer() {
+      clearInterval(timerInterval);
+      document.getElementById('timerDisplay').textContent = "03:00";
+      document.getElementById('timerDisplay').style.background = '#1e3a8a';
+    }
+
+    // Debates
+    let debates = JSON.parse(localStorage.getItem('debates')) || [];
+    function newDebate() {
+      const topic = prompt("Enter debate topic:");
+      if(!topic) return;
+      debates.push({ topic, sideA: [], sideB: [], date: new Date().toLocaleDateString() });
+      localStorage.setItem('debates', JSON.stringify(debates));
+      loadDebates();
+    }
+    function loadDebates() {
+      const list = document.getElementById('debateList');
+      list.innerHTML = '';
+      debates.forEach((d,i) => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `<strong>${d.topic}</strong><br><small>${d.date}</small>`;
+        list.appendChild(div);
+      });
+    }
+
+    // Poetry
+    let poems = JSON.parse(localStorage.getItem('poems')) || [];
+    function savePoem() {
+      const text = document.getElementById('poemInput').value.trim();
+      if(!text) return alert("Write something first!");
+      poems.push({ text, date: new Date().toLocaleDateString() });
+      localStorage.setItem('poems', JSON.stringify(poems));
+      document.getElementById('poemInput').value = '';
+      loadPoems();
+    }
+    function loadPoems() {
+      const list = document.getElementById('poemList');
+      list.innerHTML = '';
+      poems.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `<p>${p.text}</p><small>${p.date}</small>`;
+        list.appendChild(div);
+      });
+    }
+
+    // Init
+    window.onload = () => {
+      loadDebates();
+      loadPoems();
+    };
+  </script>
+</body>
+</html>
